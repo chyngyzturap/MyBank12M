@@ -2,6 +2,8 @@ package com.cht.mybank12m.ui
 
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -9,26 +11,37 @@ import com.cht.mybank12m.data.model.Account
 import com.cht.mybank12m.data.model.AccountState
 import com.cht.mybank12m.databinding.ActivityMainBinding
 import com.cht.mybank12m.databinding.DialogAddAccountBinding
-import com.cht.mybank12m.domain.presenter.AccountContracts
-import com.cht.mybank12m.domain.presenter.AccountPresenter
 import com.cht.mybank12m.ui.adapter.AccountAdapter
+import com.cht.mybank12m.ui.viewmodel.AccountViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
-class MainActivity : AppCompatActivity(), AccountContracts.View {
+@AndroidEntryPoint
+class MainActivity : AppCompatActivity() {
 
     private var _binding: ActivityMainBinding? = null
     private val binding get() = _binding!!
-    private lateinit var presenter: AccountContracts.Presenter
     private lateinit var adapter: AccountAdapter
-
+    private val viewModel: AccountViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         _binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        presenter = AccountPresenter(this)
-
         initAdapter()
         initClicks()
+        subscribeToLiveData()
+    }
+
+    private fun subscribeToLiveData(){
+        viewModel.accounts.observe(this) {
+            adapter.submitList(it)
+        }
+        viewModel.successMessage.observe(this){
+            Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
+        }
+        viewModel.errorMessage.observe(this) {
+            Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun initClicks() {
@@ -43,7 +56,7 @@ class MainActivity : AppCompatActivity(), AccountContracts.View {
         val binding = DialogAddAccountBinding.inflate(LayoutInflater.from(this))
         with(binding){
             AlertDialog.Builder(this@MainActivity)
-                .setTitle("Добавить счет")
+                .setTitle(getAlertDialogTitle(false))
                 .setView(binding.root)
                 .setPositiveButton("Добавить") { _, _ ->
                     val account = Account(
@@ -51,7 +64,7 @@ class MainActivity : AppCompatActivity(), AccountContracts.View {
                         currency = etCurrency.text.toString(),
                         balance = etBalance.text.toString().toInt()
                     )
-                    presenter.addAccount(account)
+                    viewModel.addAccount(account)
                 }
                 .setNegativeButton("Отмена", null)
                 .show()
@@ -66,7 +79,7 @@ class MainActivity : AppCompatActivity(), AccountContracts.View {
             etCurrency.setText(account.currency)
 
             AlertDialog.Builder(this@MainActivity)
-                .setTitle("Изменить счет")
+                .setTitle(getAlertDialogTitle(true))
                 .setView(binding.root)
                 .setPositiveButton("Изменить") { _, _ ->
 
@@ -76,7 +89,7 @@ class MainActivity : AppCompatActivity(), AccountContracts.View {
                         balance = etBalance.text.toString().toInt()
                     )
 
-                    presenter.updateFullyAccount(updatedAccount)
+                    viewModel.updateFullyAccount(updatedAccount)
                 }
                 .setNegativeButton("Отмена", null)
                 .show()
@@ -90,10 +103,10 @@ class MainActivity : AppCompatActivity(), AccountContracts.View {
                     showEditDialog(it)
                 },
                 onDelete = {
-                    presenter.deleteAccount(it)
+                    viewModel.deleteAccount(it)
                 },
                 onSwitchToggle = { id, isChecked ->
-                    presenter.updateStateAccount(id, AccountState(isChecked))
+                    viewModel.updateStateAccount(id, AccountState(isChecked))
                 }
             )
             recyclerView.layoutManager = LinearLayoutManager(this@MainActivity)
@@ -101,12 +114,17 @@ class MainActivity : AppCompatActivity(), AccountContracts.View {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        presenter.loadAccounts()
+    private fun getAlertDialogTitle(isEditDialog: Boolean): String {
+        val title = if (isEditDialog) {
+            "Изменить счет"
+        } else {
+            "Добавить счет"
+        }
+        return title
     }
 
-    override fun showAccounts(list: List<Account>) {
-        adapter.submitList(list)
+    override fun onResume() {
+        super.onResume()
+        viewModel.loadAccounts()
     }
 }
