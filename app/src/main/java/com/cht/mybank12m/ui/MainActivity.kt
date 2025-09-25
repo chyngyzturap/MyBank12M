@@ -18,6 +18,7 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
+
     private var _binding: ActivityMainBinding? = null
     private val binding get() = _binding!!
     private lateinit var adapter: AccountAdapter
