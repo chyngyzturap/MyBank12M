@@ -53,11 +53,11 @@ class AccountViewModel @Inject constructor(
         accountsApi.deleteAccount(accountId).handleResponse(onSuccess = {loadAccounts()})
     }
 
-    private fun <T> Call<T>.handleResponse(
+    private fun <T> Call<T>?.handleResponse(
         onSuccess: (T) -> Unit,
         onError: (String) -> Unit = {}
     ) {
-        this.enqueue(object : Callback<T> {
+        this?.enqueue(object : Callback<T> {
             override fun onResponse(call: Call<T>, response: Response<T>) {
                 val resultBody = response.body()
                 if (response.isSuccessful && resultBody != null) {
