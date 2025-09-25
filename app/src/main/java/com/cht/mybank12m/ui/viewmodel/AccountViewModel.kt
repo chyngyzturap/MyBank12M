@@ -17,8 +17,8 @@ class AccountViewModel @Inject constructor(
     private val accountsApi: AccountsApi
 ): ViewModel() {
 
-    private val _accounts = MutableLiveData<List<Account>>()
-    val accounts: LiveData<List<Account>> = _accounts
+    private val _accountsList = MutableLiveData<List<Account>>()
+    val accountsList: LiveData<List<Account>> = _accountsList
 
     private val _successMessage = MutableLiveData<String>()
     val successMessage: LiveData<String> = _successMessage
@@ -28,7 +28,7 @@ class AccountViewModel @Inject constructor(
 
     fun loadAccounts() {
         accountsApi.fetchAccounts().handleResponse(
-            onSuccess = { _accounts.value = it },
+            onSuccess = { _accountsList.value = it },
             onError = { _errorMessage.value = "$it: Ошибка загрузки счетов" }
         )
     }
