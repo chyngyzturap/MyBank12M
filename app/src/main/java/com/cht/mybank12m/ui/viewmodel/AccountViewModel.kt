@@ -17,8 +17,8 @@ class AccountViewModel @Inject constructor(
     private val accountsApi: AccountsApi
 ): ViewModel() {
 
-    private val _accounts = MutableLiveData<List<Account>>()
-    val accounts: LiveData<List<Account>> = _accounts
+    private val _accountsList = MutableLiveData<List<Account>>()
+    val accountsList: LiveData<List<Account>> = _accountsList
 
     private val _successMessage = MutableLiveData<String>()
     val successMessage: LiveData<String> = _successMessage
@@ -27,76 +27,51 @@ class AccountViewModel @Inject constructor(
     val errorMessage: LiveData<String> = _errorMessage
 
     fun loadAccounts() {
-        accountsApi.fetchAccounts().enqueue(object : Callback<List<Account>> {
-            override fun onResponse(call: Call<List<Account>>, response: Response<List<Account>>) {
-                if (response.isSuccessful) {
-                    val result = response.body() ?: emptyList()
-                    _accounts.value = result
-                } else {
-                    _errorMessage.value = "${response.code()}: Ошибка загрузки счетов"
-                }
-            }
-
-            override fun onFailure(call: Call<List<Account>>, t: Throwable) {
-
-            }
-
-        })
+        accountsApi.fetchAccounts().handleResponse(
+            onSuccess = { _accountsList.value = it },
+            onError = { _errorMessage.value = it }
+        )
     }
 
     fun addAccount(account: Account) {
-        accountsApi.createAccount(account).enqueue(object: Callback<Account> {
-            override fun onResponse(call: Call<Account>, response: Response<Account>) {
-                if (response.isSuccessful) loadAccounts()
-            }
-
-            override fun onFailure(call: Call<Account>, t: Throwable) {
-
-            }
-
-        })
+        accountsApi.createAccount(account).handleResponse(onSuccess = {loadAccounts()})
     }
 
     fun updateFullyAccount(account: Account) {
-        accountsApi.updateFullyAccount(account.id!!, account).enqueue(object : Callback<Unit>{
-            override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
-                if (response.isSuccessful) loadAccounts()
-            }
-
-            override fun onFailure(call: Call<Unit>, t: Throwable) {
-
-            }
-
-        })
+        accountsApi.updateFullyAccount(account.id!!, account).handleResponse(onSuccess = {loadAccounts()})
     }
 
     fun updateStateAccount(accountId: String, accountState: AccountState) {
-        accountsApi.updateAccountState(accountId, accountState).enqueue(object : Callback<Unit>{
-            override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
-                if (response.isSuccessful) {
-                    _successMessage.value = "Состояние счета изменено!"
-                    loadAccounts()
+        accountsApi.updateAccountState(accountId, accountState).handleResponse(
+            onSuccess = {
+                _successMessage.value = "Состояние счета изменено!"
+                loadAccounts()
+            }
+        )
+    }
+    fun deleteAccount(accountId: String) {
+        accountsApi.deleteAccount(accountId).handleResponse(onSuccess = {loadAccounts()})
+    }
+
+    private fun <T> Call<T>?.handleResponse(
+        onSuccess: (T) -> Unit,
+        onError: (String) -> Unit = {}
+    ) {
+        this?.enqueue(object : Callback<T> {
+            override fun onResponse(call: Call<T>, response: Response<T>) {
+                val resultBody = response.body()
+                if (response.isSuccessful && resultBody != null) {
+                    onSuccess(resultBody)
+                } else {
+                    onError(response.code().toString())
                 }
             }
 
-            override fun onFailure(call: Call<Unit>, t: Throwable) {
-
+            override fun onFailure(call: Call<T>, t: Throwable) {
+                onError(t.message.toString())
             }
-
         })
-    }
 
-    fun deleteAccount(accountId: String) {
-        accountsApi.deleteAccount(accountId).enqueue(object : Callback<Unit>{
-            override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
-                if (response.isSuccessful) loadAccounts()
-            }
-
-            override fun onFailure(call: Call<Unit>, t: Throwable) {
-
-            }
-
-        })
     }
 
 }

@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun subscribeToLiveData(){
-        viewModel.accounts.observe(this) {
+        viewModel.accountsList.observe(this) {
             adapter.submitList(it)
         }
         viewModel.successMessage.observe(this){
