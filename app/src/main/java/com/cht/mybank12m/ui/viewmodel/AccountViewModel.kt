@@ -29,7 +29,7 @@ class AccountViewModel @Inject constructor(
     fun loadAccounts() {
         accountsApi.fetchAccounts().handleResponse(
             onSuccess = { _accountsList.value = it },
-            onError = { _errorMessage.value = "$it: Ошибка загрузки счетов" }
+            onError = { _errorMessage.value = it }
         )
     }
 
