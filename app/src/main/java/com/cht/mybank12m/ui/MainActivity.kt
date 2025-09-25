@@ -81,7 +81,7 @@ class MainActivity : AppCompatActivity() {
             AlertDialog.Builder(this@MainActivity)
                 .setTitle(getAlertDialogTitle(true))
                 .setView(binding.root)
-                .setPositiveButton("Поменять") { _, _ ->
+                .setPositiveButton("Изменить") { _, _ ->
 
                     val updatedAccount = account.copy(
                         name = etName.text.toString(),
